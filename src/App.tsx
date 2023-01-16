@@ -1,9 +1,13 @@
+import { useEffect, useRef, useState } from "react";
 import styles from "./styles/App.module.scss";
 import srcPlan2 from "./assets/plan-2.png";
-import { useEffect, useRef, useState } from "react";
+import srcWaitingMarker from "./assets/markers/waiting.png";
+import markerks from "./markers.json";
 
 function App() {
   const [scaleIndex, setScaleIndex] = useState<any>(1);
+  const [prevScaleIndex, setPrevScaleIndex] = useState<any>(1);
+
   const [isDraggable, setDraggable] = useState<boolean>(false);
 
   const [planLeft, setPlanLeft] = useState<any>();
@@ -13,8 +17,14 @@ function App() {
   const [shiftY, setShiftY] = useState<any>();
 
   useEffect(() => {
-    console.log("planLeft", planLeft, "planTop", planTop);
-  }, [planLeft, planTop]);
+    console.log("markerks", markerks);
+  }, [markerks]);
+
+  useEffect(() => {
+    if (isDraggable) {
+      setScaleIndex(1);
+    }
+  }, [isDraggable]);
 
   const planRef: any = useRef();
 
@@ -29,24 +39,27 @@ function App() {
   };
 
   const onMouseDown = (e: React.MouseEvent) => {
-    let shiftX = e.clientX - planRef.current.getBoundingClientRect().left;
-    let shiftY = e.clientY - planRef.current.getBoundingClientRect().top;
+    setPrevScaleIndex(scaleIndex);
+    if (scaleIndex === 1) {
+      let shiftX = e.clientX - planRef.current.getBoundingClientRect().left;
+      let shiftY = e.clientY - planRef.current.getBoundingClientRect().top;
 
-    setShiftX(shiftX);
-    setShiftY(shiftY);
+      setShiftX(shiftX);
+      setShiftY(shiftY);
 
-    setPlanLeft(e.pageX - shiftX);
-    setPlanTop(e.pageY - shiftY);
-
+      setPlanLeft(e.pageX - shiftX + "px");
+      setPlanTop(e.pageY - shiftY + "px");
+    }
     setDraggable(true);
   };
 
   const onMouseUp = () => {
     setDraggable(false);
+    setScaleIndex(prevScaleIndex);
   };
 
   const onMouseMove = (e: React.MouseEvent) => {
-    if (isDraggable) {
+    if (isDraggable && scaleIndex === 1) {
       setPlanLeft(e.pageX - shiftX + "px");
       setPlanTop(e.pageY - shiftY + "px");
     }
@@ -56,7 +69,7 @@ function App() {
     <div className={styles.wrapper}>
       <img
         style={{
-          transform: ` scale(${scaleIndex})`,
+          transform: `scale(${scaleIndex})`,
           WebkitTransform: `scale(${scaleIndex})`,
           msTransform: `scale(${scaleIndex})`,
           left: `${planLeft}`,
@@ -73,6 +86,17 @@ function App() {
         onMouseMove={onMouseMove}
         onDragStart={(e) => e.preventDefault()}
       />
+      <div className={styles.marker_wrapper}>
+        {markerks[0].markers.map(({ x, y }, index) => (
+          <img
+            style={{ transform: `translate(${x}px, ${y}px)` }}
+            key={index}
+            className={styles.marker}
+            src={srcWaitingMarker}
+            alt="marker"
+          />
+        ))}
+      </div>
     </div>
   );
 }
